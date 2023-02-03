@@ -13,7 +13,7 @@ public class UIManager : MonoBehaviourSingleton<UIManager> {
 	[SerializeField] private GameObject moveHistoryContentParent = null;
 	[SerializeField] private Scrollbar moveHistoryScrollbar = null;
 	[SerializeField] private FullMoveUI moveUIPrefab = null;
-	[SerializeField] private Text[] boardInfoTexts = null;
+	//[SerializeField] private Text[] boardInfoTexts = null;
 	[SerializeField] private Color backgroundColor = new Color(0.39f, 0.39f, 0.39f);
 	[SerializeField] private Color textColor = new Color(1f, 0.71f, 0.18f);
 	[SerializeField, Range(-0.25f, 0.25f)] private float buttonColorDarkenAmount = 0f;
@@ -29,9 +29,9 @@ public class UIManager : MonoBehaviourSingleton<UIManager> {
 		GameManager.GameResetToHalfMoveEvent += OnGameResetToHalfMove;
 		
 		moveUITimeline = new Timeline<FullMoveUI>();
-		foreach (Text boardInfoText in boardInfoTexts) {
-			boardInfoText.color = textColor;
-		}
+		//foreach (Text boardInfoText in boardInfoTexts) {
+		//	boardInfoText.color = textColor;
+		//}
 
 		buttonColor = new Color(backgroundColor.r - buttonColorDarkenAmount, backgroundColor.g - buttonColorDarkenAmount, backgroundColor.b - buttonColorDarkenAmount);
 	}

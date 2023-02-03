@@ -6,6 +6,8 @@ using UnityChess;
 using UnityChess.Engine;
 using UnityEngine;
 
+using static UnityChess.GlobalVar;
+
 public class GameManager : MonoBehaviourSingleton<GameManager> {
 	public static event Action NewGameStartedEvent;
 	public static event Action GameEndedEvent;
@@ -41,8 +43,8 @@ public class GameManager : MonoBehaviourSingleton<GameManager> {
 	public List<(Square, Piece)> CurrentPieces {
 		get {
 			currentPiecesBacking.Clear();
-			for (int file = 1; file <= 8; file++) {
-				for (int rank = 1; rank <= 8; rank++) {
+			for (int file = 1; file <= FILE_MAX; file++) {
+				for (int rank = 1; rank <= RANK_MAX; rank++) {
 					Piece piece = CurrentBoard[file, rank];
 					if (piece != null) currentPiecesBacking.Add((new Square(file, rank), piece));
 				}

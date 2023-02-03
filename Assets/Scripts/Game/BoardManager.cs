@@ -2,41 +2,94 @@
 using System.Collections.Generic;
 using UnityChess;
 using UnityEngine;
+using UnityEngine.UIElements;
+using static UnityChess.GlobalVar;
 using static UnityChess.SquareUtil;
 
 public class BoardManager : MonoBehaviourSingleton<BoardManager> {
-	private readonly GameObject[] allSquaresGO = new GameObject[64];
-	private Dictionary<Square, GameObject> positionMap;
-	private const float BoardPlaneSideLength = 14f; // measured from corner square center to corner square center, on same side.
-	private const float BoardPlaneSideHalfLength = BoardPlaneSideLength * 0.5f;
-	private const float BoardHeight = 1.6f;
-	private readonly System.Random rng = new System.Random();
+	private const int BOARD_SIZE = FILE_MAX * RANK_MAX;
 
-	private void Awake() {
+	private readonly GameObject[] allSquaresGO = new GameObject[BOARD_SIZE];
+	private Dictionary<Square, GameObject> positionMap;
+
+    private const string PieceModelPath = "XiangqiPieces/Default/";
+	//private const string PieceModelPath = "PieceSets/Marble/";
+	private const float BoardFileExpectedLength = 16f;
+    public float BoardFileSideStart = -8f; // measured square at File=1
+    public float BoardFileSideEnd = 8f; // measured square at File=<last>
+    public float BoardRankSideStart = -8.8f;
+    public float BoardRankSideEnd = 8.8f;
+    public float BoardHeight = 1.2f;
+    public float BoardPickupHeight = 3f;
+    //private readonly System.Random rng = new System.Random();
+
+    private void Awake() {
 		GameManager.NewGameStartedEvent += OnNewGameStarted;
 		GameManager.GameResetToHalfMoveEvent += OnGameResetToHalfMove;
 		
-		positionMap = new Dictionary<Square, GameObject>(64);
-		Transform boardTransform = transform;
-		Vector3 boardPosition = boardTransform.position;
-		
-		for (int file = 1; file <= 8; file++) {
-			for (int rank = 1; rank <= 8; rank++) {
-				GameObject squareGO = new GameObject(SquareToString(file, rank)) {
+		positionMap = new Dictionary<Square, GameObject>(BOARD_SIZE);
+		//Transform boardTransform = transform;
+		//Vector3 boardPosition = boardTransform.position;
+
+		Debug.Log($"board awake {FILE_MAX} {RANK_MAX} {BOARD_SIZE}");
+        Transform boardTransform = InstanceTheBoard();
+        Vector3 boardPosition = boardTransform.position;
+
+
+        for (int file = 1; file <= FILE_MAX; file++) {
+			for (int rank = 1; rank <= RANK_MAX; rank++) {
+				//GameObject squareGO = new GameObject(SquareToString(file, rank)) {
+				//	transform = {
+				//		position = new Vector3(
+				//			boardPosition.x + FileToSidePosition(file),
+				//			boardPosition.y + BoardHeight,
+				//			boardPosition.z + RankToSidePosition(rank)),
+				//		parent = boardTransform
+				//	},
+				//	tag = "Square"
+				//};
+				GameObject squareGO = new GameObject(SquareToString(file, rank))
+				{
 					transform = {
-						position = new Vector3(boardPosition.x + FileOrRankToSidePosition(file), boardPosition.y + BoardHeight, boardPosition.z + FileOrRankToSidePosition(rank)),
-						parent = boardTransform
+						position = new Vector3(
+							boardPosition.x + FileToSidePosition(file),
+							boardPosition.y + BoardHeight,
+							boardPosition.z + RankToSidePosition(rank)),
 					},
 					tag = "Square"
 				};
+				squareGO.transform.SetParent(boardTransform, false);
 
-				positionMap.Add(new Square(file, rank), squareGO);
-				allSquaresGO[(file - 1) * 8 + (rank - 1)] = squareGO;
+                positionMap.Add(new Square(file, rank), squareGO);
+				allSquaresGO[(file - 1) * RANK_MAX + (rank - 1)] = squareGO;
 			}
 		}
 	}
 
-	private void OnNewGameStarted() {
+	private Transform InstanceTheBoard()
+	{
+        GameObject boardGO = Instantiate(
+            Resources.Load(PieceModelPath + "BoardWrap") as GameObject,
+            transform
+        );
+		Vector3 tr = boardGO.transform.Find("CornerStart").position;
+		BoardFileSideStart = tr.x;
+        BoardRankSideStart = tr.z;
+		BoardHeight = tr.y;
+        tr = boardGO.transform.Find("CornerEnd").position;
+        BoardFileSideEnd = tr.x;
+        BoardRankSideEnd = tr.z;
+        tr = boardGO.transform.Find("Pickup").position;
+		BoardPickupHeight = tr.y;
+
+		float boardScale = BoardFileExpectedLength / (BoardFileSideEnd - BoardFileSideStart);
+		boardGO.transform.localScale = new Vector3(boardScale, boardScale, boardScale);
+
+		return boardGO.transform.Find("Chessboard");
+    }
+
+
+    private void OnNewGameStarted() {
 		ClearBoard();
 		
 		foreach ((Square square, Piece piece) in GameManager.Instance.CurrentPieces) {
@@ -67,14 +120,18 @@ public class BoardManager : MonoBehaviourSingleton<BoardManager> {
 	public void CreateAndPlacePieceGO(Piece piece, Square position) {
 		string modelName = $"{piece.Owner} {piece.GetType().Name}";
 		GameObject pieceGO = Instantiate(
-			Resources.Load("PieceSets/Marble/" + modelName) as GameObject,
+			Resources.Load(PieceModelPath + modelName) as GameObject,
 			positionMap[position].transform
 		);
+		pieceGO.AddComponent<VisualPiece>();
+		pieceGO.GetComponent<VisualPiece>().enabled = true;
+		pieceGO.GetComponent<VisualPiece>().PieceColor = piece.Owner;
+        pieceGO.GetComponent<VisualPiece>().PickupYRaise = BoardPickupHeight;
 
-		/*if (!(piece is Knight) && !(piece is King)) {
+        /*if (!(piece is Knight) && !(piece is King)) {
 			pieceGO.transform.Rotate(0f, (float) rng.NextDouble() * 360f, 0f);
 		}*/
-	}
+    }
 
 	public void GetSquareGOsWithinRadius(List<GameObject> squareGOs, Vector3 positionWS, float radius) {
 		float radiusSqr = radius * radius;
@@ -109,9 +166,17 @@ public class BoardManager : MonoBehaviourSingleton<BoardManager> {
 		return square.transform.childCount == 0 ? null : square.transform.GetChild(0).gameObject;
 	}
 	
-	private static float FileOrRankToSidePosition(int index) {
-		float t = (index - 1) / 7f;
-		return Mathf.Lerp(-BoardPlaneSideHalfLength, BoardPlaneSideHalfLength, t);
+	// private static float FileOrRankToSidePosition(int index) {
+	// 	float t = (index - 1) / 7f;
+	// 	return Mathf.Lerp(-BoardPlaneSideHalfLength, BoardPlaneSideHalfLength, t);
+	// }
+	private float FileToSidePosition(int index) {
+		float t = (index - 1) / (float)(FILE_MAX-1);
+		return Mathf.Lerp(BoardFileSideStart, BoardFileSideEnd, t);
+	}
+	private float RankToSidePosition(int index) {
+		float t = (index - 1) / (float)(RANK_MAX-1);
+		return Mathf.Lerp(BoardRankSideStart, BoardRankSideEnd, t);
 	}
 	
 	private void ClearBoard() {
