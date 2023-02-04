@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityChess;
 using UnityEngine;
@@ -7,7 +8,7 @@ using UnityEngine.UI;
 public class UIManager : MonoBehaviourSingleton<UIManager> {
 	[SerializeField] private GameObject promotionUI = null;
 	[SerializeField] private Text resultText = null;
-	[SerializeField] private InputField GameStringInputField = null;
+    [SerializeField] private InputField GameStringInputField = null;
 	[SerializeField] private Image whiteTurnIndicator = null;
 	[SerializeField] private Image blackTurnIndicator = null;
 	[SerializeField] private GameObject moveHistoryContentParent = null;
@@ -18,8 +19,12 @@ public class UIManager : MonoBehaviourSingleton<UIManager> {
 	[SerializeField] private Color textColor = new Color(1f, 0.71f, 0.18f);
 	[SerializeField, Range(-0.25f, 0.25f)] private float buttonColorDarkenAmount = 0f;
 	[SerializeField, Range(-0.25f, 0.25f)] private float moveHistoryAlternateColorDarkenAmount = 0f;
-	
-	private Timeline<FullMoveUI> moveUITimeline;
+
+    [SerializeField] private Text popupText = null;
+	private Coroutine popupCo = null;
+	private float popupSecond = 1f;
+
+    private Timeline<FullMoveUI> moveUITimeline;
 	private Color buttonColor;
 
 	private void Start() {
@@ -27,13 +32,29 @@ public class UIManager : MonoBehaviourSingleton<UIManager> {
 		GameManager.GameEndedEvent += OnGameEnded;
 		GameManager.MoveExecutedEvent += OnMoveExecuted;
 		GameManager.GameResetToHalfMoveEvent += OnGameResetToHalfMove;
+		GameManager.NewMessage += OnNewMessage;
 		
 		moveUITimeline = new Timeline<FullMoveUI>();
 		//foreach (Text boardInfoText in boardInfoTexts) {
 		//	boardInfoText.color = textColor;
 		//}
 
+		popupText.text = "";
+
 		buttonColor = new Color(backgroundColor.r - buttonColorDarkenAmount, backgroundColor.g - buttonColorDarkenAmount, backgroundColor.b - buttonColorDarkenAmount);
+	}
+
+	private void OnNewMessage(string message)
+	{
+		if (popupCo!= null) { StopCoroutine(popupCo); }
+        IEnumerator startPopupMsg()
+		{
+			popupText.text = message;
+			popupText.enabled = true;
+            yield return new WaitForSecondsRealtime(popupSecond);
+			popupText.enabled = false;
+        }
+        popupCo = StartCoroutine(startPopupMsg());
 	}
 
 	private void OnNewGameStarted() {

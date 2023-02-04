@@ -13,7 +13,7 @@ namespace UnityChess {
 			Board board,
 			Square position
 		) {
-			foreach (Square offset in SquareUtil.SurroundingOffsets) {
+			foreach (Square offset in SquareUtil.CardinalOffsets) {
 				Movement testMove = new Movement(position, position + offset);
 
 				if (inPalace(testMove.End)) {

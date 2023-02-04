@@ -23,20 +23,28 @@ namespace UnityChess {
 			    || board.IsOccupiedBySideAt(move.End, movedPieceSide)
 			) { return false; }
 
-			if (!selfChecked) return true;
+			return true;
+			//if (!selfChecked) return true;
 			
-			Board resultingBoard = new Board(board);
-			resultingBoard.MovePiece(new Movement(move.Start, move.End));
+			//Board resultingBoard = new Board(board);
+			//resultingBoard.MovePiece(new Movement(move.Start, move.End));
 			
-			return !IsPlayerInCheck(resultingBoard, movedPieceSide);
+			//return !IsPlayerInCheck(resultingBoard, movedPieceSide);
 		}
 
-  //      public static bool IsMoveCauseSelfChecked(Board board, Movement move, Side movedPieceSide)
-		//{
-  //          Board resultingBoard = new Board(board);
-  //          resultingBoard.MovePiece(new Movement(move.Start, move.End));
-  //          return resultingBoard.IsKingAttacked(movedPieceSide);
-  //      }
+        internal static bool MoveCauseSelfChecked(Board board, Movement move, Side movedPieceSide)
+		{
+            Board resultingBoard = new(board);
+            resultingBoard.MovePiece(new Movement(move.Start, move.End));
+            return IsPlayerInCheck(resultingBoard, movedPieceSide);
+        }
+
+        //      public static bool IsMoveCauseSelfChecked(Board board, Movement move, Side movedPieceSide)
+        //{
+        //          Board resultingBoard = new Board(board);
+        //          resultingBoard.MovePiece(new Movement(move.Start, move.End));
+        //          return resultingBoard.IsKingAttacked(movedPieceSide);
+        //      }
 
         // DucT : FIXME is this too much? should have a cached-version on Board?
         public static bool IsKingAttacked(Board board, Side friendlySide) {

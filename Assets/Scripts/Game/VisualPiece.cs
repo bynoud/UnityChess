@@ -6,8 +6,11 @@ using static UnityChess.SquareUtil;
 public class VisualPiece : MonoBehaviour {
 	public delegate void VisualPieceMovedAction(Square movedPieceInitialSquare, Transform movedPieceTransform, Transform closestBoardSquareTransform, Piece promotionPiece = null);
 	public static event VisualPieceMovedAction VisualPieceMoved;
-	
-	public Side PieceColor;
+
+    public delegate void VisualPieceSelectedAction(Square selectedSquare);
+    public static event VisualPieceSelectedAction VisualPieceSelected;
+
+    public Side PieceColor;
 	public Square CurrentSquare => StringToSquare(transform.parent.name);
 
 
@@ -28,6 +31,7 @@ public class VisualPiece : MonoBehaviour {
 	public void OnMouseDown() {
 		if (enabled) {
 			piecePositionSS = boardCamera.WorldToScreenPoint(transform.position);
+			VisualPieceSelected?.Invoke(CurrentSquare);
 		}
 	}
 

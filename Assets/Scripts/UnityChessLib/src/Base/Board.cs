@@ -50,7 +50,8 @@ namespace UnityChess {
             legalMoves = new();
 			foreach (Piece piece in Pieces)
 			{
-				legalMoves[piece] = piece.CalculateLegalMoves(board, piece.Position);
+				var calculatedMoves = piece.CalculateLegalMoves(board, piece.Position);
+                if (calculatedMoves != null) legalMoves[piece] = calculatedMoves;
 			}
 
             return legalMoves;
@@ -58,21 +59,21 @@ namespace UnityChess {
 
 		public bool IsAttackingSquare(Square target)
 		{
-			if (attackedSquares != null && attackedSquares.ContainsKey(target))
-			{
-				return attackedSquares[target];
-			}
+			//if (attackedSquares != null && attackedSquares.ContainsKey(target))
+			//{
+			//	return attackedSquares[target];
+			//}
 
-			attackedSquares ??= new();
+			//attackedSquares ??= new();
 			foreach (Piece piece in Pieces)
 			{
 				if (piece.IsAttackingTo(board, piece.Position, target))
 				{
-					attackedSquares[target] = true;
+					//attackedSquares[target] = true;
 					return true;
 				}
 			}
-			attackedSquares[target] = false;
+			//attackedSquares[target] = false;
 			return false;
         }
 

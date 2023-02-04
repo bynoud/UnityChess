@@ -164,12 +164,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2cba141883d2397458218c5ab03c6355, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  BoardFileSideStart: -8
-  BoardFileSideEnd: 8
-  BoardRankSideStart: -8.8
-  BoardRankSideEnd: 8.8
-  BoardHeight: 1.2
-  BoardPickupHeight: 3
+  HighlighPref: {fileID: 6613631137734886497, guid: 44f309bed66f3a54ebd3666865185086,
+    type: 3}
 --- !u!4 &173564349
 Transform:
   m_ObjectHideFlags: 0

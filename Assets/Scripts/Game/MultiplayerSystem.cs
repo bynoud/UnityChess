@@ -10,7 +10,7 @@ public class MultiplayerSystem : MonoBehaviourSingleton<MultiplayerSystem> {
 	
 	private void Start() {
 		serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-		serverSocket.Bind(new IPEndPoint(IPAddress.Any, 23001));
+		serverSocket.Bind(new IPEndPoint(IPAddress.Any, 23002));
 		serverSocket.ConnectAsync(new IPEndPoint(IPAddress.Loopback, 23000)).ContinueWith(task => {
 			if (!task.IsFaulted) {
 				Debug.LogError("Connected");

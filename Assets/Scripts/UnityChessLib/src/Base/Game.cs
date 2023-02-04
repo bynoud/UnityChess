@@ -60,15 +60,26 @@ namespace UnityChess {
 
 		public bool TryGetLegalMove(Square startSquare, Square endSquare, out Movement move) {
 			move = null;
-
-			return BoardTimeline.TryGetCurrent(out Board currentBoard)
-			       && LegalMovesTimeline.TryGetCurrent(out Dictionary<Piece, Dictionary<(Square, Square), Movement>> currentLegalMoves)
-			       && currentBoard[startSquare] is { } movingPiece
-			       && currentLegalMoves.TryGetValue(movingPiece, out Dictionary<(Square, Square), Movement> movesByStartEndSquares)
-			       && movesByStartEndSquares.TryGetValue((startSquare, endSquare), out move);
+            // LegalMovesTimeline now include self-checked moves
+            return BoardTimeline.TryGetCurrent(out Board currentBoard)
+				   && LegalMovesTimeline.TryGetCurrent(out Dictionary<Piece, Dictionary<(Square, Square), Movement>> currentLegalMoves)
+				   && currentBoard[startSquare] is Piece movingPiece
+				   && currentLegalMoves.TryGetValue(movingPiece, out Dictionary<(Square, Square), Movement> movesByStartEndSquares)
+				   && movesByStartEndSquares.TryGetValue((startSquare, endSquare), out move)
+				   // need this to confirm if the move dont cause self-checked
+				   && !Rules.MoveCauseSelfChecked(currentBoard, move, movingPiece.Owner);
 		}
-		
-		public bool TryGetLegalMovesForPiece(Piece movingPiece, out ICollection<Movement> legalMoves) {
+
+		public bool TryGetLegalMovesForPiece(Square square, out ICollection<Movement> legalMoves)
+		{
+			legalMoves = null;
+			return BoardTimeline.TryGetCurrent(out Board currentBoard)
+					&& currentBoard[square] is { } movingPiece
+					&& TryGetLegalMovesForPiece(movingPiece, out legalMoves);
+        }
+
+
+        public bool TryGetLegalMovesForPiece(Piece movingPiece, out ICollection<Movement> legalMoves) {
 			legalMoves = null;
 
 			if (movingPiece != null

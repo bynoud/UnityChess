@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
 using UnityChess;
@@ -13,8 +14,11 @@ public class GameManager : MonoBehaviourSingleton<GameManager> {
 	public static event Action GameEndedEvent;
 	public static event Action GameResetToHalfMoveEvent;
 	public static event Action MoveExecutedEvent;
-	
-	public Board CurrentBoard {
+
+    public delegate void NewMessageAction(string message);
+    public static event NewMessageAction NewMessage;
+
+    public Board CurrentBoard {
 		get {
 			game.BoardTimeline.TryGetCurrent(out Board currentBoard);
 			return currentBoard;
@@ -70,6 +74,7 @@ public class GameManager : MonoBehaviourSingleton<GameManager> {
 	
 	public void Start() {
 		VisualPiece.VisualPieceMoved += OnPieceMoved;
+		VisualPiece.VisualPieceSelected += OnPieceSelected;
 
 		serializersByType = new Dictionary<GameSerializationType, IGameSerializer> {
 			[GameSerializationType.FEN] = new FENSerializer(),
@@ -209,11 +214,35 @@ public class GameManager : MonoBehaviourSingleton<GameManager> {
 		userPromotionChoice = choice;
 	}
 
+	private void OnPieceSelected(Square selectedSquare)
+	{
+		if (game.TryGetLegalMovesForPiece(selectedSquare, out ICollection<Movement> legalMoves))
+		{
+			Debug.Log($"Select {selectedSquare} got {legalMoves.Count} moves");
+			foreach (Movement move in legalMoves)
+			{
+				Debug.Log($"  {move.Start} -> {move.End}");
+			}
+			BoardManager.Instance.HighlightSquares(legalMoves);
+        }
+
+    }
+
 	private async void OnPieceMoved(Square movedPieceInitialSquare, Transform movedPieceTransform, Transform closestBoardSquareTransform, Piece promotionPiece = null) {
 		Square endSquare = new Square(closestBoardSquareTransform.name);
 
+		BoardManager.Instance.StopHighlight();
+
+        Debug.Log($"moving {movedPieceInitialSquare} -> {endSquare}");
+		if (movedPieceInitialSquare == endSquare) {
+			movedPieceTransform.position = movedPieceTransform.parent.position;
+			return;
+		}
+
 		if (!game.TryGetLegalMove(movedPieceInitialSquare, endSquare, out Movement move)) {
 			movedPieceTransform.position = movedPieceTransform.parent.position;
+			if (move == null) NewMessage?.Invoke($"Illegal Move");
+			else NewMessage?.Invoke($"In-checked");
 #if DEBUG_VIEW
 			Piece movedPiece = CurrentBoard[movedPieceInitialSquare];
 			game.TryGetLegalMovesForPiece(movedPiece, out ICollection<Movement> legalMoves);
@@ -250,7 +279,8 @@ public class GameManager : MonoBehaviourSingleton<GameManager> {
 		}
 	}
 
-	private void DoAIMove(Movement move) {
+
+    private void DoAIMove(Movement move) {
 		GameObject movedPiece = BoardManager.Instance.GetPieceGOAtPosition(move.Start);
 		GameObject endSquareGO = BoardManager.Instance.GetSquareGOByPosition(move.End);
 		OnPieceMoved(
@@ -261,7 +291,7 @@ public class GameManager : MonoBehaviourSingleton<GameManager> {
 		);
 	}
 
-	public bool HasLegalMoves(Piece piece) {
-		return game.TryGetLegalMovesForPiece(piece, out _);
-	}
+	//public bool HasLegalMoves(Piece piece) {
+	//	return game.TryGetLegalMovesForPiece(piece, out _);
+	//}
 }

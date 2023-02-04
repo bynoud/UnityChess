@@ -28,18 +28,19 @@ namespace UnityChess {
 			}
 		}
 
-
+		// This now always return the "possible" moves, instead of "legal" moves
+		// which can have the move that cause self-checked
 		public Dictionary<(Square, Square), Movement> CalculateLegalMoves(
 			Board board,
 			Square position
 		)
 		{
 			Dictionary<(Square, Square), Movement> result = new Dictionary<(Square, Square), Movement>();
-			foreach (Movement move in PossibleMoves(board, position, true))
+			foreach (Movement move in PossibleMoves(board, position, false))
 			{
 				result[(move.Start, move.End)] = move;
 			}
-			return result;
+			return result.Count == 0 ? null : result;
 		}
 
 		public bool IsAttackingTo(

@@ -12,16 +12,21 @@ public class BoardManager : MonoBehaviourSingleton<BoardManager> {
 	private readonly GameObject[] allSquaresGO = new GameObject[BOARD_SIZE];
 	private Dictionary<Square, GameObject> positionMap;
 
+	public GameObject HighlighPref = null;
+	private Queue<GameObject> HighlightsGO = new();
+
     private const string PieceModelPath = "XiangqiPieces/Default/";
 	//private const string PieceModelPath = "PieceSets/Marble/";
 	private const float BoardFileExpectedLength = 16f;
-    public float BoardFileSideStart = -8f; // measured square at File=1
-    public float BoardFileSideEnd = 8f; // measured square at File=<last>
-    public float BoardRankSideStart = -8.8f;
-    public float BoardRankSideEnd = 8.8f;
-    public float BoardHeight = 1.2f;
-    public float BoardPickupHeight = 3f;
+    private float BoardFileSideStart = -8f; // measured square at File=1
+    private float BoardFileSideEnd = 8f; // measured square at File=<last>
+    private float BoardRankSideStart = -8.8f;
+    private float BoardRankSideEnd = 8.8f;
+    private float BoardHeight = 1.2f;
+    private float BoardPickupHeight = 3f;
     //private readonly System.Random rng = new System.Random();
+
+
 
     private void Awake() {
 		GameManager.NewGameStartedEvent += OnNewGameStarted;
@@ -31,7 +36,6 @@ public class BoardManager : MonoBehaviourSingleton<BoardManager> {
 		//Transform boardTransform = transform;
 		//Vector3 boardPosition = boardTransform.position;
 
-		Debug.Log($"board awake {FILE_MAX} {RANK_MAX} {BOARD_SIZE}");
         Transform boardTransform = InstanceTheBoard();
         Vector3 boardPosition = boardTransform.position;
 
@@ -148,13 +152,16 @@ public class BoardManager : MonoBehaviourSingleton<BoardManager> {
 
 	public void EnsureOnlyPiecesOfSideAreEnabled(Side side) {
 		VisualPiece[] visualPiece = GetComponentsInChildren<VisualPiece>(true);
+		//Debug.Log($"enable check ${side} {visualPiece.Length}");
 		foreach (VisualPiece pieceBehaviour in visualPiece) {
 			Piece piece = GameManager.Instance.CurrentBoard[pieceBehaviour.CurrentSquare];
-			
-			pieceBehaviour.enabled = pieceBehaviour.PieceColor == side
-			                         && GameManager.Instance.HasLegalMoves(piece);
-		}
-	}
+
+			//bool hasLegalMoves = GameManager.Instance.HasLegalMoves(piece);
+			//pieceBehaviour.enabled = pieceBehaviour.PieceColor == side && hasLegalMoves;
+			pieceBehaviour.enabled = pieceBehaviour.PieceColor == side; // just let the piece pickup, even without possible moves
+        }
+
+    }
 
 	public void TryDestroyVisualPiece(Square position) {
 		VisualPiece visualPiece = positionMap[position].GetComponentInChildren<VisualPiece>();
@@ -164,6 +171,28 @@ public class BoardManager : MonoBehaviourSingleton<BoardManager> {
 	public GameObject GetPieceGOAtPosition(Square position) {
 		GameObject square = GetSquareGOByPosition(position);
 		return square.transform.childCount == 0 ? null : square.transform.GetChild(0).gameObject;
+	}
+
+	public void HighlightSquares(ICollection<Movement> moves)
+	{
+		string msg = "";
+		foreach (Movement move in moves)
+		{
+			GameObject hlGO = Instantiate(HighlighPref, positionMap[move.End].transform);
+			hlGO.tag = "SquareHighlight";
+			HighlightsGO.Enqueue(hlGO);
+			msg += $" {move.End}";
+		}
+		Debug.Log($"Higlighted {msg}");
+	}
+
+	public void StopHighlight()
+	{
+		Debug.Log("Stoping hight");
+		while (HighlightsGO.Count > 0)
+		{
+			DestroyImmediate(HighlightsGO.Dequeue());
+		}
 	}
 	
 	// private static float FileOrRankToSidePosition(int index) {
